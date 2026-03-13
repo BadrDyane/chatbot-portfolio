@@ -12,11 +12,11 @@ Flow:
 This is the "R" in RAG (Retrieval Augmented Generation).
 """
 
+import requests
 import chromadb
 from config import settings
 from core.embedder import Embedder
 
-# Connect to the same ChromaDB collection used in ingestion
 chroma_client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
 collection = chroma_client.get_or_create_collection(
     name="knowledge_base",
@@ -29,23 +29,15 @@ embedder = Embedder()
 async def retrieve_context(query: str) -> list[str]:
     """
     Find the most relevant document chunks for a given query.
-
-    Args:
-        query: The user's question in plain text
-
-    Returns:
-        List of relevant text chunks (the context we will send to the LLM)
-        Returns empty list if no documents are in the knowledge base.
     """
-    # Check if the collection has any documents
     if collection.count() == 0:
-        print("  Warning: Knowledge base is empty. No documents have been uploaded.")
+        print("  Warning: Knowledge base is empty. Upload documents first.")
         return []
 
     # Embed the user's question
     query_embedding = await embedder.embed_one(query)
 
-    # Search for the most similar chunks
+    # Search ChromaDB for similar chunks
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=min(settings.retrieval_top_k, collection.count()),
@@ -55,8 +47,7 @@ async def retrieve_context(query: str) -> list[str]:
     if not results["documents"] or not results["documents"][0]:
         return []
 
-    # Log what we found (helpful for debugging)
-    print(f"  Retrieved {len(results['documents'][0])} chunks")
+    # Log results for debugging
     for i, (doc, meta, dist) in enumerate(zip(
         results["documents"][0],
         results["metadatas"][0],
