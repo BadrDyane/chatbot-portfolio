@@ -1,0 +1,13 @@
+﻿Company FAQ
+
+Q: What are your business hours?
+A: We are open Monday to Friday, 9am to 6pm Eastern Time.
+
+Q: How do I reset my password?
+A: Click "Forgot Password" on the login page and enter your email address. You will receive a reset link within 5 minutes.
+
+Q: What is your refund policy?
+A: We offer a full refund within 30 days of purchase. Contact support@company.com to request a refund.
+
+Q: How do I contact support?
+A: Email us at support@company.com or call 1-800-555-0100 during business hours.
