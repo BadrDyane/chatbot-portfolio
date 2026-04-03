@@ -1,95 +1,134 @@
-# SupportAI — AI-Powered Customer Support Chatbot
+# SupportAI — AI Customer Support Agent
 
-> A production-ready RAG (Retrieval Augmented Generation) chatbot that lets businesses upload their documentation and instantly deploy an AI assistant that answers customer questions accurately — grounded entirely in their own content.
+**Give your business a support agent that never sleeps.**
+
+SupportAI is a knowledge-based AI assistant that learns everything about your business from your own documents — and uses that knowledge to answer customer questions instantly, accurately, and 24/7. When a question is too specific or sensitive, it knows to refer the customer to a human agent instead of guessing.
+
+Built with a production RAG (Retrieval Augmented Generation) architecture using FastAPI, React, ChromaDB, and OpenAI.
+
+---
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green?style=flat-square&logo=fastapi)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_DB-orange?style=flat-square)
+![ChromaDB](https://img.shields.io/badge/Vector_DB-ChromaDB-orange?style=flat-square)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?style=flat-square&logo=openai)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
 ---
 
-## What It Does
+## The Problem It Solves
 
-Businesses upload PDF or text documents — product manuals, FAQs, policy documents, knowledge bases — and SupportAI transforms them into a fully functional AI support agent.
+Most businesses spend significant time answering the same customer questions repeatedly — pricing, policies, hours, procedures, product details. A human support agent can only work so many hours, handle so many conversations, and remember so many details.
 
-Users ask questions in natural language. The system retrieves the most relevant sections from the uploaded documents and generates accurate, grounded answers using GPT-4o-mini. The bot never makes up information — if the answer isn't in the documents, it says so.
+SupportAI fixes this. You upload your business documentation once. The system learns it. From that point forward, any customer question gets an instant, accurate answer pulled directly from your actual content — not from a generic AI that guesses or makes things up.
+
+When a question falls outside the knowledge base or requires human judgment, the bot says so clearly and directs the customer to a real person. No hallucinations. No wrong answers presented as facts.
 
 ---
 
-## Live Demo
+## Screenshots
 
-> Coming soon — deployment in progress.
+### Chat Interface
+![Chat Interface](screenshots/chat-interface.png)
+*Real-time streaming responses grounded in uploaded business documents*
+
+### Streaming Answer in Progress
+![Streaming Response](screenshots/streaming-response.png)
+*Answers arrive token by token — no waiting for the full response*
+
+### Admin Dashboard
+![Admin Panel](screenshots/admin-panel.png)
+*Upload, monitor, and manage knowledge base documents*
+
+### Document Processing
+![Document Processing](screenshots/document-processing.png)
+*Documents are chunked, embedded, and stored in the vector database automatically*
+
+### Graceful Fallback
+![Out of Scope](screenshots/out-of-scope.png)
+*When the answer is not in the knowledge base, the bot refers to a human agent*
+
+---
+
+## Demo
+
+> 🎬 Demo video coming soon.
+
+> 🌐 Live deployment coming soon. Follow the setup guide below to run locally in under 10 minutes.
+
+---
+
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    React Frontend (Vite)                     │
+│           Chat Interface  │  Admin Dashboard                 │
+└───────────────┬───────────────────────┬──────────────────────┘
+                │ REST / SSE            │ REST
+┌───────────────▼───────────────────────▼──────────────────────┐
+│                      FastAPI Backend                          │
+│                                                               │
+│  ┌──────────────────────┐    ┌──────────────────────────────┐ │
+│  │  Ingestion Pipeline  │    │      RAG Query Pipeline      │ │
+│  │  PDF/TXT             │    │  1. Embed the question       │ │
+│  │    → Extract text    │    │  2. Search ChromaDB          │ │
+│  │    → Split chunks    │    │  3. Retrieve top 5 chunks    │ │
+│  │    → Embed vectors   │    │  4. Build grounded prompt    │ │
+│  │    → Store ChromaDB  │    │  5. Stream LLM answer        │ │
+│  └──────────────────────┘    └──────────────────────────────┘ │
+└───────────────┬───────────────────────┬──────────────────────┘
+                │                       │
+     ┌──────────▼──────────┐  ┌─────────▼──────────┐
+     │     ChromaDB        │  │   SQLite Database   │
+     │  (Vector Storage)   │  │  (Docs + History)   │
+     └─────────────────────┘  └────────────────────┘
+                                         │
+                              ┌──────────▼──────────┐
+                              │     OpenAI API       │
+                              │  Embeddings + Chat   │
+                              └─────────────────────┘
+```
+
+### The RAG Pipeline Explained
+
+**At upload time:**
+Your document is parsed, split into 500-character overlapping chunks, and each chunk is converted into a 1536-dimension vector using OpenAI's embedding model. These vectors are stored in ChromaDB alongside the original text.
+
+**At query time:**
+The user's question is converted into a vector. ChromaDB finds the 5 most semantically similar chunks using cosine similarity. Those chunks are injected into a system prompt along with the conversation history. GPT-4o-mini generates a grounded answer and streams it back token by token.
+
+**The result:**
+The AI can only answer from what you gave it. It cannot guess, hallucinate, or go off-topic.
 
 ---
 
 ## Features
 
-- **Document Ingestion** — Upload PDF, TXT, and Markdown files through a drag-and-drop admin interface
-- **RAG Architecture** — Retrieval Augmented Generation ensures answers are always grounded in real content
-- **Streaming Responses** — Answers stream token by token in real time, exactly like ChatGPT
-- **Conversation History** — Full multi-turn conversation memory per session stored in SQLite
-- **Admin Dashboard** — Upload, monitor, and delete documents with live processing status
-- **Vector Search** — ChromaDB powers semantic similarity search across all uploaded content
-- **Background Processing** — Document ingestion runs asynchronously so the UI never hangs
-- **Graceful Fallback** — When the answer isn't in the knowledge base, the bot says so clearly
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                  React Frontend (Vite)                   │
-│         Chat Interface  │  Admin Dashboard               │
-└──────────────┬──────────────────────┬────────────────────┘
-               │ REST / SSE           │ REST
-┌──────────────▼──────────────────────▼────────────────────┐
-│                    FastAPI Backend                        │
-│                                                           │
-│   ┌─────────────────┐      ┌──────────────────────────┐  │
-│   │ Ingestion        │      │   RAG Query Pipeline     │  │
-│   │ PDF → Chunks     │      │   1. Embed question      │  │
-│   │ Chunks → Vectors │      │   2. Search ChromaDB     │  │
-│   │ Vectors → Store  │      │   3. Retrieve top chunks │  │
-│   └─────────────────┘      │   4. Build prompt        │  │
-│                             │   5. Stream LLM answer   │  │
-│                             └──────────────────────────┘  │
-└──────────────┬───────────────────────┬────────────────────┘
-               │                       │
-    ┌──────────▼──────┐    ┌──────────▼──────────┐
-    │   ChromaDB      │    │  SQLite Database     │
-    │ (Vector Store)  │    │ (Docs + Convos)      │
-    └─────────────────┘    └──────────────────────┘
-                                       │
-                            ┌──────────▼──────────┐
-                            │     OpenAI API       │
-                            │  Embeddings + Chat   │
-                            └─────────────────────┘
-```
-
-### RAG Pipeline — How It Works
-
-1. **Ingestion** — Uploaded documents are parsed, split into 500-character overlapping chunks, and embedded using OpenAI's `text-embedding-3-small` model. Vectors are stored in ChromaDB.
-2. **Retrieval** — When a user asks a question, the question is embedded and compared against all stored vectors using cosine similarity. The top 5 most relevant chunks are retrieved.
-3. **Generation** — The retrieved chunks are injected into a system prompt alongside the conversation history. GPT-4o-mini generates a grounded answer and streams it back token by token.
+- **Knowledge-Based Answers** — Every response is grounded in your uploaded documents. The AI cannot make up information.
+- **24/7 Availability** — Once deployed, the assistant runs continuously with no human involvement needed for routine questions.
+- **Smart Escalation** — When a question is outside the knowledge base, the bot clearly directs the customer to a human agent.
+- **Streaming Responses** — Answers arrive word by word in real time — no waiting for the full response.
+- **Multi-Turn Conversations** — The bot remembers the full conversation history within a session.
+- **Document Management** — Upload, monitor, and delete documents through a clean admin dashboard.
+- **Background Processing** — Documents are processed asynchronously so the interface never freezes.
+- **Auto-Generated API Docs** — Full interactive API documentation at `/docs` powered by FastAPI.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend Framework | FastAPI |
-| AI — Language Model | OpenAI GPT-4o-mini |
-| AI — Embeddings | OpenAI text-embedding-3-small |
-| Vector Database | ChromaDB |
-| Relational Database | SQLite + SQLAlchemy |
-| Document Processing | LangChain Text Splitters, PyPDF |
-| Frontend Framework | React 18 + Vite |
-| HTTP Client | Axios + Fetch (SSE streaming) |
-| Runtime | Python 3.10+, Node 18+ |
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| Backend | FastAPI | Fast, async, auto-generates API docs |
+| Language Model | OpenAI GPT-4o-mini | Cost-efficient and accurate |
+| Embeddings | text-embedding-3-small | Best price/performance ratio |
+| Vector Database | ChromaDB | Persistent, simple, no server needed |
+| Relational Database | SQLite + SQLAlchemy | Zero setup, perfect for this scale |
+| Document Parsing | PyPDF + LangChain Splitters | Reliable chunking with overlap |
+| Frontend | React 18 + Vite | Fast dev experience, modern stack |
+| HTTP | Axios + Fetch SSE | Regular requests + streaming |
 
 ---
 
@@ -98,33 +137,40 @@ Users ask questions in natural language. The system retrieves the most relevant 
 ```
 chatbot-portfolio/
 ├── backend/
-│   ├── main.py                  # FastAPI app entry point
-│   ├── config.py                # Settings via pydantic-settings
-│   ├── database.py              # SQLAlchemy setup
-│   ├── models.py                # Document + Conversation models
+│   ├── main.py                  # FastAPI app, middleware, startup
+│   ├── config.py                # All settings via pydantic-settings
+│   ├── database.py              # SQLAlchemy engine + session
+│   ├── models.py                # Document + Conversation DB models
 │   ├── api/
-│   │   ├── admin.py             # Upload, list, delete documents
-│   │   └── chat.py              # Chat message + history endpoints
+│   │   ├── admin.py             # Upload, list, delete, status endpoints
+│   │   └── chat.py              # Message + history + clear endpoints
 │   ├── services/
-│   │   ├── ingestion.py         # Full ingestion pipeline
-│   │   ├── retrieval.py         # Embedding + vector search
-│   │   └── llm.py               # Prompt building + streaming
+│   │   ├── ingestion.py         # Extract → chunk → embed → store pipeline
+│   │   ├── retrieval.py         # Embed query → similarity search
+│   │   └── llm.py               # Prompt building + streaming generation
 │   ├── core/
-│   │   ├── chunker.py           # RecursiveCharacterTextSplitter
+│   │   ├── chunker.py           # RecursiveCharacterTextSplitter wrapper
 │   │   └── embedder.py          # OpenAI embeddings via requests
 │   └── data/
-│       ├── uploads/             # Raw uploaded files
-│       └── chroma_db/           # ChromaDB persistent storage
+│       ├── uploads/             # Raw uploaded files (gitignored)
+│       └── chroma_db/           # ChromaDB persistent store (gitignored)
 └── frontend/
     └── src/
-        ├── App.jsx              # Root component + layout
+        ├── App.jsx              # Root component, layout, notifications
+        ├── index.css            # Design tokens, animations, global styles
         ├── api/client.js        # All backend communication
         ├── hooks/
-        │   ├── useChat.js       # Chat state + streaming logic
-        │   └── useDocuments.js  # Document management + polling
+        │   ├── useChat.js       # Chat state, streaming, session management
+        │   └── useDocuments.js  # Document CRUD + status polling
         └── components/
-            ├── Chat/            # ChatWindow, MessageBubble, TypingIndicator
-            └── Admin/           # AdminPanel, DocumentList, UploadZone
+            ├── Chat/
+            │   ├── ChatWindow.jsx       # Input, messages, suggestions
+            │   ├── MessageBubble.jsx    # User and assistant bubbles
+            │   └── TypingIndicator.jsx  # Animated dots while streaming
+            └── Admin/
+                ├── AdminPanel.jsx    # Dashboard layout and stats
+                ├── DocumentList.jsx  # Document rows with status badges
+                └── UploadZone.jsx    # Drag-and-drop upload area
 ```
 
 ---
@@ -133,9 +179,9 @@ chatbot-portfolio/
 
 ### Prerequisites
 
-- Python 3.10 or higher
-- Node.js 18 or higher
-- An OpenAI API key with billing enabled — [platform.openai.com](https://platform.openai.com)
+- Python 3.10+
+- Node.js 18+
+- An OpenAI API key — [platform.openai.com](https://platform.openai.com)
 
 ### 1. Clone the Repository
 
@@ -149,23 +195,22 @@ cd chatbot-portfolio
 ```bash
 cd backend
 
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv venv
 
-# On Mac/Linux:
+# Activate — Mac/Linux:
 source venv/bin/activate
-
-# On Windows:
+# Activate — Windows:
 venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-Create your `.env` file inside the `backend/` folder:
+Create `backend/.env`:
 
 ```env
-OPENAI_API_KEY=sk-your-openai-api-key-here
+OPENAI_API_KEY=sk-your-key-here
 OPENAI_MODEL=gpt-4o-mini
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 CHROMA_PERSIST_DIR=./data/chroma_db
@@ -182,76 +227,75 @@ Start the backend:
 uvicorn main:app --reload --port 8000
 ```
 
-API documentation is auto-generated at `http://localhost:8000/docs`
+Interactive API docs available at `http://localhost:8000/docs`
 
 ### 3. Frontend Setup
 
-Open a new terminal:
-
 ```bash
-cd frontend
+cd ../frontend
 npm install
 npm run dev
 ```
 
 ### 4. Open the App
 
-Navigate to `http://localhost:5173`
+```
+http://localhost:5173
+```
 
 ---
 
-## Usage
+## Usage Guide
 
-### Adding Documents
+### Step 1 — Add your business documents
 
-1. Click the **Admin** tab in the top navigation
-2. Drag and drop a PDF or TXT file into the upload zone, or click to browse
-3. Wait for the status badge to change from **Processing** to **Ready**
-4. The document is now part of the knowledge base
+Go to the **Admin** tab. Upload any PDF or TXT file containing your business information — FAQs, product manuals, policy documents, pricing guides, anything relevant.
 
-### Asking Questions
+Wait for the status badge to turn **Ready**. The document is now part of the knowledge base.
 
-1. Click the **Chat** tab
-2. Type a question in the input box or click one of the suggestion chips
-3. The AI will retrieve relevant content from your documents and stream an answer
-4. Continue the conversation — the bot remembers the full session history
+### Step 2 — Start answering questions
 
-### What Works Best
+Switch to the **Chat** tab. Ask any question related to your uploaded content. The assistant retrieves the most relevant sections and generates an accurate, grounded response.
 
-Ask specific, content-rich questions that align with sections of your documents:
+### Step 3 — Watch the escalation work
+
+Ask something outside the knowledge base — a highly personal question, an edge case, something not in any document. The assistant will acknowledge it cannot answer and direct the user to a human agent.
+
+### What makes a good question
 
 ```
-✅ "What is your refund policy?"
-✅ "What are the main risks mentioned in the report?"
-✅ "How does the product handle data privacy?"
-✅ "What support options are available?"
+✅ "What is your return policy?"
+✅ "How do I reset my password?"
+✅ "What are your business hours?"
+✅ "What does the premium plan include?"
+✅ "How do I contact support?"
 
-❌ "What is the company name?"  ← too vague for retrieval
-❌ "Summarize everything"        ← too broad
+❌ "What is the company name?"  — too vague, no strong chunk match
+❌ "Tell me everything"          — too broad
 ```
 
 ---
 
 ## API Reference
 
-### Admin Endpoints
+### Admin
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/admin/documents/upload` | Upload a document |
 | `GET` | `/admin/documents` | List all documents |
-| `GET` | `/admin/documents/{id}/status` | Get processing status |
+| `GET` | `/admin/documents/{id}/status` | Poll processing status |
 | `DELETE` | `/admin/documents/{id}` | Delete a document |
 
-### Chat Endpoints
+### Chat
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/chat/message` | Send a message, receive SSE stream |
-| `GET` | `/chat/history/{session_id}` | Get conversation history |
-| `DELETE` | `/chat/history/{session_id}` | Clear conversation history |
+| `POST` | `/chat/message` | Send message, receive SSE stream |
+| `GET` | `/chat/history/{session_id}` | Load conversation history |
+| `DELETE` | `/chat/history/{session_id}` | Clear a conversation |
 
-### Health
+### System
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -259,57 +303,63 @@ Ask specific, content-rich questions that align with sections of your documents:
 
 ---
 
-## Key Engineering Decisions
+## Engineering Notes
 
-**Why ChromaDB?** Persistent by default, simple API, handles metadata filtering, and ideal for projects at this scale. FAISS is faster at massive scale but requires more manual index management.
+**Why `requests` instead of the OpenAI SDK?**
+The OpenAI Python SDK uses `httpx` internally which conflicts with certain Windows Server SSL and proxy configurations. Rather than fighting the dependency, the OpenAI REST API is called directly using `requests` — identical functionality, zero compatibility issues. This is a real problem-solving decision encountered and resolved during development.
 
-**Why stream responses?** SSE streaming delivers tokens as they arrive from OpenAI, making the UI feel instantaneous even on longer responses. This is the same pattern used by ChatGPT.
+**Why background tasks for ingestion?**
+Large PDFs can take 10–30 seconds to process. Synchronous ingestion would time out the HTTP request. FastAPI's `BackgroundTasks` returns `202 Accepted` immediately, processes the document asynchronously, and updates the database record when complete. The frontend polls the status endpoint every 2 seconds until the document is ready.
 
-**Why `requests` instead of the OpenAI SDK?** The OpenAI Python SDK uses `httpx` internally which has known SSL/proxy conflicts on certain Windows Server environments. Calling the REST API directly with `requests` is more reliable across all environments with no loss of functionality.
+**Why `temperature=0.3`?**
+A support bot must be precise and consistent. Lower temperature reduces creative variation and keeps answers factual. A customer asking about a refund policy needs the correct answer — not a creative interpretation of it.
 
-**Why background tasks for ingestion?** Large PDFs can take 10-30 seconds to process. Running ingestion synchronously would time out the HTTP request. FastAPI background tasks return `202 Accepted` immediately and update the database record when processing completes.
-
-**Why `temperature=0.3` on the LLM?** Lower temperature produces more factual, consistent answers. A support bot should be precise, not creative.
+**Why overlapping chunks?**
+A 50-character overlap between adjacent chunks prevents important context from being cut at a boundary and lost during retrieval. If a key sentence spans two chunks, the overlap ensures neither chunk loses critical meaning.
 
 ---
 
-## Potential Improvements
+## Roadmap
 
-- [ ] Support for website scraping as a knowledge source
-- [ ] Multi-tenant support with separate knowledge bases per client
-- [ ] Authentication layer for the admin panel
-- [ ] Re-ranking retrieved chunks for better accuracy
-- [ ] Support for DOCX and CSV file formats
-- [ ] Usage analytics dashboard
-- [ ] Deployment via Docker Compose
+- [ ] Website URL as a knowledge source (web scraping ingestion)
+- [ ] Multi-tenant support — separate knowledge bases per client
+- [ ] Admin authentication and access control
+- [ ] DOCX and CSV file support
+- [ ] Re-ranking retrieved chunks for improved accuracy
+- [ ] Usage analytics — questions asked, escalation rate, top topics
+- [ ] Docker Compose for one-command deployment
+- [ ] Live cloud deployment
 
 ---
 
 ## Use Cases
 
-This system is suitable for any business that wants to automate answers to common customer questions:
+SupportAI can be deployed for any business that handles repetitive customer questions:
 
-- E-commerce stores — product info, shipping, returns
-- SaaS companies — feature docs, onboarding, troubleshooting
-- Healthcare providers — policies, appointment info, FAQs
-- Law firms — general service info, process explanations
-- Educational institutions — enrollment, policies, schedules
-- Any business with existing documentation
+| Industry | Example Use |
+|----------|------------|
+| E-commerce | Product info, shipping times, return policies |
+| SaaS | Feature questions, onboarding, troubleshooting |
+| Healthcare | Appointment policies, service info, FAQs |
+| Real Estate | Listing questions, process explanations |
+| Education | Enrollment, deadlines, campus policies |
+| Finance | Service info, account FAQs, process guides |
+| Any business | Anything currently answered by a human support agent |
 
 ---
 
 ## Author
 
 **Badr Dyane**
-Full-Stack Developer — AI Integration Specialist
+Full-Stack Developer — AI & Automation Specialist
 
 - GitHub: [github.com/BadrDyane](https://github.com/BadrDyane)
 - Email: [badrdyane@gmail.com](mailto:badrdyane@gmail.com)
 
-Interested in a custom AI chatbot for your business? Get in touch.
+Looking for a custom AI assistant built around your business? Get in touch.
 
 ---
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is open source under the [MIT License](LICENSE).
